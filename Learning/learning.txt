@@ -2,5 +2,8 @@
     - npm init -y
     - npm install express mongoose dotenv cors
     - npm i bcrypt jsonwebtoken
+    - npm i cookie-parser
+    - npm i nodemon
+
 
     -npm i express-validator :- for validate the data from routes.  

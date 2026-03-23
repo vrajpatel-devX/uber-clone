@@ -232,3 +232,157 @@ Returned when no user is found with the given email, or the password does not ma
 - On successful login, a **JWT token** is generated with a **24-hour** expiry.
 - The token is returned in the response body **and** set as a `token` cookie.
 - The `password` field is excluded from the user object in responses (`select: false` in the schema).
+
+---
+
+### GET `/users/profile`
+
+#### Description
+
+Returns the profile of the currently authenticated user. This is a **protected** endpoint — a valid JWT token must be provided via a cookie or the `Authorization` header.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/users/profile
+```
+
+---
+
+#### Authentication
+
+Requires a valid JWT token sent in **one** of the following ways:
+
+| Method                | Format                          |
+|-----------------------|---------------------------------|
+| **Cookie**            | `token=<jwt_token>`             |
+| **Authorization Header** | `Bearer <jwt_token>`         |
+
+> The token must not be blacklisted. Blacklisted tokens are rejected with `401`.
+
+---
+
+#### Request Body
+
+_No request body required._
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Profile Retrieved
+
+Returns the authenticated user's profile object.
+
+```json
+{
+  "_id": "660f1a2b3c4d5e6f7a8b9c0d",
+  "fullname": {
+    "firstname": "Vraj",
+    "lastname": "Patel"
+  },
+  "email": "vraj@example.com"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                      |
+|-------------|--------------------------------------------------|
+| `200`       | User profile returned successfully               |
+| `401`       | Missing, invalid, expired, or blacklisted token  |
+
+---
+
+### GET `/users/logout`
+
+#### Description
+
+Logs out the currently authenticated user by clearing the `token` cookie and blacklisting the JWT token so it cannot be reused. This is a **protected** endpoint.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/users/logout
+```
+
+---
+
+#### Authentication
+
+Requires a valid JWT token sent in **one** of the following ways:
+
+| Method                | Format                          |
+|-----------------------|---------------------------------|
+| **Cookie**            | `token=<jwt_token>`             |
+| **Authorization Header** | `Bearer <jwt_token>`         |
+
+---
+
+#### Request Body
+
+_No request body required._
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Logout Successful
+
+The `token` cookie is cleared and the token is added to the blacklist.
+
+```json
+{
+  "message": "Logged out"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has already been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                         |
+|-------------|-----------------------------------------------------|
+| `200`       | Logged out successfully, token blacklisted          |
+| `401`       | Missing, invalid, expired, or blacklisted token     |
+
+---
+
+#### Notes
+
+- The token is added to a **blacklist** collection in the database, preventing reuse even if it hasn't expired.
+- The `token` cookie is cleared from the client via `res.clearCookie('token')`.
