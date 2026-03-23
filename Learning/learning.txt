@@ -1,0 +1,3 @@
+1) install dependencies
+    - npm init -y
+    - npm install express mongoose dotenv cors
