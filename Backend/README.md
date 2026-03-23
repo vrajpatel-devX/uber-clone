@@ -548,3 +548,285 @@ Returned when a captain with the provided email already exists in the database.
 - The `password` field is excluded from the captain object in responses (`select: false` in the schema).
 - New captains are created with a default `status` of `inactive`.
 - The `vehicleType` field only accepts: `car`, `motorcycle`, or `auto`.
+
+---
+
+### POST `/captains/login`
+
+#### Description
+
+Authenticates an existing captain. The endpoint validates the request data, looks up the captain by email, compares the provided password against the stored hash, and on success returns a JWT authentication token (also set as a cookie) along with the captain object.
+
+---
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+```
+/captains/login
+```
+
+---
+
+#### Request Body
+
+The request body must be sent as **JSON** (`Content-Type: application/json`).
+
+| Field      | Type     | Required | Description                                |
+|------------|----------|----------|--------------------------------------------|
+| `email`    | `string` | ✅ Yes   | A valid email address                      |
+| `password` | `string` | ✅ Yes   | Captain's password (minimum **6** characters) |
+
+#### Example Request
+
+```json
+{
+  "email": "captain.vraj@example.com",
+  "password": "secret123"
+}
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Login Successful
+
+Returned when the credentials are valid. A `token` cookie is also set on the response.
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "captain": {
+    "_id": "660f1a2b3c4d5e6f7a8b9c0d",
+    "fullname": {
+      "firstname": "Vraj",
+      "lastname": "Patel"
+    },
+    "email": "captain.vraj@example.com",
+    "status": "inactive",
+    "vehicle": {
+      "color": "Black",
+      "plate": "GJ-05-AB-1234",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when the request body fails validation (e.g., invalid email format or short password).
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid Email",
+      "param": "email",
+      "location": "body"
+    },
+    {
+      "msg": "Password must be at least 6 characters long",
+      "param": "password",
+      "location": "body"
+    }
+  ]
+}
+```
+
+##### ❌ `401 Unauthorized` — Invalid Credentials
+
+Returned when no captain is found with the given email, or the password does not match.
+
+```json
+{
+  "message": "Invalid email or password"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                              |
+|-------------|----------------------------------------------------------|
+| `200`       | Login successful, token returned and set as cookie       |
+| `400`       | Validation failed (invalid email format or short password) |
+| `401`       | Invalid email or password                                |
+
+---
+
+#### Notes
+
+- The password is compared using `bcrypt.compare()` against the stored hash.
+- On successful login, a **JWT token** is generated with a **24-hour** expiry.
+- The token is returned in the response body **and** set as a `token` cookie.
+- The `password` field is excluded from the captain object in responses (`select: false` in the schema).
+
+---
+
+### GET `/captains/profile`
+
+#### Description
+
+Returns the profile of the currently authenticated captain. This is a **protected** endpoint — a valid JWT token must be provided via a cookie or the `Authorization` header.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/captains/profile
+```
+
+---
+
+#### Authentication
+
+Requires a valid JWT token sent in **one** of the following ways:
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+> The token must not be blacklisted. Blacklisted tokens are rejected with `401`.
+
+---
+
+#### Request Body
+
+_No request body required._
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Profile Retrieved
+
+Returns the authenticated captain's profile object.
+
+```json
+{
+  "captain": {
+    "_id": "660f1a2b3c4d5e6f7a8b9c0d",
+    "fullname": {
+      "firstname": "Vraj",
+      "lastname": "Patel"
+    },
+    "email": "captain.vraj@example.com",
+    "status": "inactive",
+    "vehicle": {
+      "color": "Black",
+      "plate": "GJ-05-AB-1234",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                      |
+|-------------|--------------------------------------------------|
+| `200`       | Captain profile returned successfully            |
+| `401`       | Missing, invalid, expired, or blacklisted token  |
+
+---
+
+### GET `/captains/logout`
+
+#### Description
+
+Logs out the currently authenticated captain by clearing the `token` cookie and blacklisting the JWT token so it cannot be reused. This is a **protected** endpoint.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/captains/logout
+```
+
+---
+
+#### Authentication
+
+Requires a valid JWT token sent in **one** of the following ways:
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Request Body
+
+_No request body required._
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Logout Successful
+
+The `token` cookie is cleared and the token is added to the blacklist.
+
+```json
+{
+  "message": "Logout successfully"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has already been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                         |
+|-------------|-----------------------------------------------------|
+| `200`       | Logged out successfully, token blacklisted          |
+| `401`       | Missing, invalid, expired, or blacklisted token     |
+
+---
+
+#### Notes
+
+- The token is added to a **blacklist** collection in the database, preventing reuse even if it hasn't expired.
+- The `token` cookie is cleared from the client via `res.clearCookie('token')`.
