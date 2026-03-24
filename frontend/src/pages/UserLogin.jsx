@@ -1,19 +1,37 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { Link } from 'react-router-dom'
+import { UserDataContext } from '../context/UserContext'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const UserLogin = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [userData, setUserData] = useState({})
+  const [ email, setEmail ] = useState('')
+  const [ password, setPassword ] = useState('')
+  const [ userData, setUserData ] = useState({})
+
+  const { user, setUser } = useContext(UserDataContext)
+  const navigate = useNavigate()
 
 
 
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
-    setUserData({
+
+    const userData = {
       email: email,
       password: password
-    })
+    }
+
+    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, userData)
+
+    if (response.status === 200) {
+      const data = response.data
+      setUser(data.user)
+      localStorage.setItem('token', data.token)
+      navigate('/home')
+    }
+
+
     setEmail('')
     setPassword('')
   }
@@ -59,7 +77,7 @@ const UserLogin = () => {
       </div>
       <div>
         <Link
-        to='/captain-login'
+          to='/captain-login'
           className='bg-[#10b461] flex items-center justify-center text-white font-semibold mb-5 rounded-lg px-4 py-2 w-full text-lg placeholder:text-base'
         >Sign in as Captain</Link>
       </div>
