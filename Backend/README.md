@@ -830,3 +830,370 @@ Returned when no token is provided, the token is invalid/expired, or the token h
 
 - The token is added to a **blacklist** collection in the database, preventing reuse even if it hasn't expired.
 - The `token` cookie is cleared from the client via `res.clearCookie('token')`.
+
+---
+
+## Maps Endpoints
+
+> **All Maps endpoints are protected.** A valid user JWT token must be provided via a cookie (`token=<jwt_token>`) or the `Authorization` header (`Bearer <jwt_token>`).
+
+---
+
+### GET `/maps/get-coordinates`
+
+#### Description
+
+Returns the geographic coordinates (latitude and longitude) for a given address string. Uses the **Google Maps Geocoding API** under the hood.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/maps/get-coordinates
+```
+
+---
+
+#### Authentication
+
+Requires a valid **user** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Query Parameters
+
+| Parameter   | Type     | Required | Description                                      |
+|-------------|----------|----------|--------------------------------------------------|
+| `address`   | `string` | ✅ Yes   | The address to geocode (minimum **3** characters) |
+
+#### Example Request
+
+```
+GET /maps/get-coordinates?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Coordinates Retrieved
+
+Returns the latitude (`ltd`) and longitude (`lng`) of the provided address.
+
+```json
+{
+  "ltd": 37.4224764,
+  "lng": -122.0842499
+}
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when the `address` query parameter is missing, not a string, or shorter than 3 characters.
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid value",
+      "param": "address",
+      "location": "query"
+    }
+  ]
+}
+```
+
+##### ❌ `404 Not Found` — Coordinates Not Found
+
+Returned when the Google Maps API cannot geocode the given address.
+
+```json
+{
+  "message": "Coordinates not found"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                                |
+|-------------|------------------------------------------------------------|
+| `200`       | Coordinates returned successfully                          |
+| `400`       | Validation failed (missing or invalid `address` parameter) |
+| `401`       | Missing, invalid, expired, or blacklisted token            |
+| `404`       | Unable to geocode the provided address                     |
+
+---
+
+#### Notes
+
+- Uses the `GOOGLE_MAPS_API` environment variable for the API key.
+- The response uses `ltd` (not `lat`) for the latitude field.
+- Internally calls the **Google Maps Geocoding API** (`/maps/api/geocode/json`).
+
+---
+
+### GET `/maps/get-distance-time`
+
+#### Description
+
+Returns the distance and estimated travel time between an origin and a destination. Uses the **Google Maps Distance Matrix API** under the hood.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/maps/get-distance-time
+```
+
+---
+
+#### Authentication
+
+Requires a valid **user** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Query Parameters
+
+| Parameter      | Type     | Required | Description                                            |
+|----------------|----------|----------|--------------------------------------------------------|
+| `origin`       | `string` | ✅ Yes   | Starting location / address (minimum **3** characters) |
+| `destination`  | `string` | ✅ Yes   | Ending location / address (minimum **3** characters)   |
+
+#### Example Request
+
+```
+GET /maps/get-distance-time?origin=New+York,NY&destination=Los+Angeles,CA
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Distance & Time Retrieved
+
+Returns a Google Maps Distance Matrix element containing distance and duration.
+
+```json
+{
+  "distance": {
+    "text": "4,489 km",
+    "value": 4489491
+  },
+  "duration": {
+    "text": "1 day 16 hours",
+    "value": 144000
+  },
+  "status": "OK"
+}
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when `origin` or `destination` query parameters are missing, not a string, or shorter than 3 characters.
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid value",
+      "param": "origin",
+      "location": "query"
+    },
+    {
+      "msg": "Invalid value",
+      "param": "destination",
+      "location": "query"
+    }
+  ]
+}
+```
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the Google Maps API fails, returns no routes, or an unexpected error occurs.
+
+```json
+{
+  "message": "Internal server error"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                                          |
+|-------------|----------------------------------------------------------------------|
+| `200`       | Distance and time returned successfully                              |
+| `400`       | Validation failed (missing or invalid `origin`/`destination`)        |
+| `401`       | Missing, invalid, expired, or blacklisted token                      |
+| `500`       | Google Maps API error, no routes found, or internal server error     |
+
+---
+
+#### Notes
+
+- Uses the `GOOGLE_MAPS_API` environment variable for the API key.
+- Internally calls the **Google Maps Distance Matrix API** (`/maps/api/distancematrix/json`).
+- If the API returns `ZERO_RESULTS` for the route, a `500` error is returned.
+- The `distance.value` is in **meters** and `duration.value` is in **seconds**.
+
+---
+
+### GET `/maps/get-suggestions`
+
+#### Description
+
+Returns a list of autocomplete place suggestions for a given text input. Uses the **Google Maps Places Autocomplete API** under the hood.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/maps/get-suggestions
+```
+
+---
+
+#### Authentication
+
+Requires a valid **user** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Query Parameters
+
+| Parameter | Type     | Required | Description                                                  |
+|-----------|----------|----------|--------------------------------------------------------------|
+| `input`   | `string` | ✅ Yes   | The search text for autocomplete (minimum **3** characters)  |
+
+#### Example Request
+
+```
+GET /maps/get-suggestions?input=Times+Squ
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Suggestions Retrieved
+
+Returns an array of place description strings.
+
+```json
+[
+  "Times Square, Manhattan, NY, USA",
+  "Times Square, Causeway Bay, Hong Kong",
+  "Times Square Shopping Centre, Pretoria, South Africa"
+]
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when the `input` query parameter is missing, not a string, or shorter than 3 characters.
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid value",
+      "param": "input",
+      "location": "query"
+    }
+  ]
+}
+```
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the Google Maps API fails or an unexpected error occurs.
+
+```json
+{
+  "message": "Internal server error"
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                                      |
+|-------------|------------------------------------------------------------------|
+| `200`       | Suggestions returned successfully                                |
+| `400`       | Validation failed (missing or invalid `input` parameter)         |
+| `401`       | Missing, invalid, expired, or blacklisted token                  |
+| `500`       | Google Maps API error or internal server error                   |
+
+---
+
+#### Notes
+
+- Uses the `GOOGLE_MAPS_API` environment variable for the API key.
+- Internally calls the **Google Maps Places Autocomplete API** (`/maps/api/place/autocomplete/json`).
+- Only the `description` field from each prediction is returned (not the full prediction object).
+- Empty/falsy descriptions are filtered out from the response.
