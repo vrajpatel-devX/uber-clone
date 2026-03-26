@@ -1197,3 +1197,268 @@ Returned when no token is provided, the token is invalid/expired, or the token h
 - Internally calls the **Google Maps Places Autocomplete API** (`/maps/api/place/autocomplete/json`).
 - Only the `description` field from each prediction is returned (not the full prediction object).
 - Empty/falsy descriptions are filtered out from the response.
+
+---
+
+## Ride Endpoints
+
+> **All Ride endpoints are protected.** A valid user JWT token must be provided via a cookie (`token=<jwt_token>`) or the `Authorization` header (`Bearer <jwt_token>`).
+
+---
+
+### POST `/rides/create`
+
+#### Description
+
+Creates a new ride request for a user. It calculates the fare based on the given pickup and destination locations, generates a random OTP for the ride, saves the ride request into the database, and alerts nearby captains via socket connections.
+
+---
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+```
+/rides/create
+```
+
+---
+
+#### Authentication
+
+Requires a valid **user** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Request Body
+
+The request body must be sent as **JSON** (`Content-Type: application/json`).
+
+| Field         | Type     | Required | Description                                                    |
+|---------------|----------|----------|----------------------------------------------------------------|
+| `pickup`      | `string` | ✅ Yes   | The starting location of the ride (minimum **3** characters)   |
+| `destination` | `string` | ✅ Yes   | The ending location of the ride (minimum **3** characters)     |
+| `vehicleType` | `string` | ✅ Yes   | Type of vehicle — must be one of: `auto`, `car`, or `moto`     |
+
+#### Example Request
+
+```json
+{
+  "pickup": "Times Square, New York, NY",
+  "destination": "Central Park, New York, NY",
+  "vehicleType": "car"
+}
+```
+
+---
+
+#### Responses
+
+##### ✅ `201 Created` — Ride Created Successfully
+
+Returns the created ride object.
+
+```json
+{
+  "_id": "660f7b8c9d0e1f2a3b4c5d6e",
+  "user": "660f1a2b3c4d5e6f7a8b9c0d",
+  "pickup": "Times Square, New York, NY",
+  "destination": "Central Park, New York, NY",
+  "fare": 150,
+  "status": "pending",
+  "otp": ""
+}
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when the request body fails validation (e.g., missing parameters or invalid vehicle type).
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid pickup address",
+      "param": "pickup",
+      "location": "body"
+    },
+    {
+      "msg": "Invalid destination address",
+      "param": "destination",
+      "location": "body"
+    },
+    {
+      "msg": "Invalid vehicle type",
+      "param": "vehicleType",
+      "location": "body"
+    }
+  ]
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+##### ❌ `500 Internal Server Error`
+
+Returned when an unexpected error occurs during fare calculation or saving the ride.
+
+```json
+{
+  "message": "Internal server error"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                          |
+|-------------|------------------------------------------------------|
+| `201`       | Ride created successfully                            |
+| `400`       | Validation failed for the request body               |
+| `401`       | Missing, invalid, expired, or blacklisted token      |
+| `500`       | Internal server error                                |
+
+---
+
+#### Notes
+
+- Uses Google Maps Distance Matrix API internally to calculate distance and duration.
+- Generates a **6-digit random OTP**. When returning the ride object via this endpoint, the OTP is emitted as empty (`""`).
+- Pushes a `new-ride` socket event to captains in a 2 km radius of the pickup location.
+
+---
+
+### GET `/rides/get-fare`
+
+#### Description
+
+Calculates and returns the estimated fare for different vehicle types (`auto`, `car`, `moto`) based on the distance and time between the given pickup and destination locations.
+
+---
+
+#### HTTP Method
+
+`GET`
+
+#### URL
+
+```
+/rides/get-fare
+```
+
+---
+
+#### Authentication
+
+Requires a valid **user** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Query Parameters
+
+| Parameter      | Type     | Required | Description                                            |
+|----------------|----------|----------|--------------------------------------------------------|
+| `pickup`       | `string` | ✅ Yes   | Starting location / address (minimum **3** characters) |
+| `destination`  | `string` | ✅ Yes   | Ending location / address (minimum **3** characters)   |
+
+#### Example Request
+
+```
+GET /rides/get-fare?pickup=Times+Square,+New+York,+NY&destination=Central+Park,+New+York,+NY
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Fare Estimated Successfully
+
+Returns an object with estimated fares for different vehicle types.
+
+```json
+{
+  "auto": 120,
+  "car": 250,
+  "moto": 80
+}
+```
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when `pickup` or `destination` query parameters are missing or shorter than 3 characters.
+
+```json
+{
+  "errors": [
+    {
+      "msg": "Invalid pickup address",
+      "param": "pickup",
+      "location": "query"
+    },
+    {
+      "msg": "Invalid destination address",
+      "param": "destination",
+      "location": "query"
+    }
+  ]
+}
+```
+
+##### ❌ `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid/expired, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the Google Maps API fails or an unexpected error occurs during calculation.
+
+```json
+{
+  "message": "Internal server error"
+}
+```
+
+---
+
+#### Status Codes Summary
+
+| Status Code | Description                                                          |
+|-------------|----------------------------------------------------------------------|
+| `200`       | Fare successfully estimated                                          |
+| `400`       | Validation failed (missing or invalid `pickup`/`destination`)        |
+| `401`       | Missing, invalid, expired, or blacklisted token                      |
+| `500`       | Google Maps API error or internal server error                       |
+
+---
+
+#### Notes
+
+- Uses Google Maps Distance Matrix API internally to fetch distance and duration.
+- The base fare, per kilometer rate, and per minute rate vary between the vehicle types (`auto`, `car`, `moto`) for calculations.
