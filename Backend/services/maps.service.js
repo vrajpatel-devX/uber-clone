@@ -8,7 +8,7 @@ module.exports.getAddressCoordinate = async (address) => {
     try {
         const response = await axios.get(url);
         if (response.data.status === 'OK') {
-            const location = response.data.results[ 0 ].geometry.location;
+            const location = response.data.results[0].geometry.location;
             return {
                 ltd: location.lat,
                 lng: location.lng
@@ -37,11 +37,11 @@ module.exports.getDistanceTime = async (origin, destination) => {
         const response = await axios.get(url);
         if (response.data.status === 'OK') {
 
-            if (response.data.rows[ 0 ].elements[ 0 ].status === 'ZERO_RESULTS') {
+            if (response.data.rows[0].elements[0].status === 'ZERO_RESULTS') {
                 throw new Error('No routes found');
             }
 
-            return response.data.rows[ 0 ].elements[ 0 ];
+            return response.data.rows[0].elements[0];
         } else {
             throw new Error('Unable to fetch distance and time');
         }
@@ -81,7 +81,7 @@ module.exports.getCaptainsInTheRadius = async (ltd, lng, radius) => {
     const captains = await captainModel.find({
         location: {
             $geoWithin: {
-                $centerSphere: [ [ ltd, lng ], radius / 6371 ]
+                $centerSphere: [[ltd, lng], radius / 6371]
             }
         }
     });

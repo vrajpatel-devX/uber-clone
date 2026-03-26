@@ -8,6 +8,9 @@ import VehiclePanel from '../components/VehiclePanel';
 import ConfirmRide from '../components/ConfirmRide';
 import LookingForDriver from '../components/LookingForDriver';
 import WaitingForDriver from '../components/WaitingForDriver';
+import { SocketContext } from '../context/SocketContext';
+import { useContext, useEffect } from 'react';
+import { UserDataContext } from '../context/UserContext';
 
 const Home = () => {
     const [pickup, setPickup] = useState('')
@@ -33,6 +36,28 @@ const Home = () => {
     const [fare, setFare] = useState({})
     const [vehicleType, setVehicleType] = useState(null)
 
+    const { socket } = useContext(SocketContext)
+    const { user } = useContext(UserDataContext)
+
+    useEffect(() => {
+        if (user && user._id) {
+            socket.emit("join", { userType: "user", userId: user._id })
+        }
+    }, [user])
+
+    socket.on('ride-confirmed', ride => {
+
+
+        setVehicleFound(false)
+        setWaitingForDriver(true)
+        setRide(ride)
+    })
+
+    socket.on('ride-started', ride => {
+        console.log("ride")
+        setWaitingForDriver(false)
+        navigate('/riding', { state: { ride } }) // Updated navigate to include ride data
+    })
 
 
     const handlePickupChange = async (e) => {
@@ -264,4 +289,4 @@ const Home = () => {
 }
 
 export default Home
-
+

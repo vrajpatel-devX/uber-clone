@@ -1462,3 +1462,197 @@ Returned when the Google Maps API fails or an unexpected error occurs during cal
 
 - Uses Google Maps Distance Matrix API internally to fetch distance and duration.
 - The base fare, per kilometer rate, and per minute rate vary between the vehicle types (`auto`, `car`, `moto`) for calculations.
+
+---
+
+### POST `/rides/confirm`
+
+#### Description
+
+Allows a captain to confirm/accept a ride request. Updates the ride status to `accepted`, assigns the captain to the ride, and emits a `ride-confirmed` socket event to the user.
+
+---
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+```
+/rides/confirm
+```
+
+---
+
+#### Authentication
+
+Requires a valid **captain** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Request Body
+
+The request body must be sent as **JSON** (`Content-Type: application/json`).
+
+| Field      | Type     | Required | Description                                                    |
+|------------|----------|----------|----------------------------------------------------------------|
+| `rideId`   | `string` | ✅ Yes   | The valid MongoID of the ride to be confirmed                  |
+
+#### Example Request
+
+```json
+{
+  "rideId": "660f7b8c9d0e1f2a3b4c5d6e"
+}
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Ride Confirmed Successfully
+
+Returns the updated ride object (with populated user and captain).
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when `rideId` is missing or is not a valid MongoID.
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the ride is not found or an unexpected error occurs.
+
+---
+
+### POST `/rides/start`
+
+#### Description
+
+Allows a captain to start a confirmed ride. Validates the provided OTP, updates the ride status to `ongoing`, and emits a `ride-started` socket event to the user.
+
+---
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+```
+/rides/start
+```
+
+---
+
+#### Authentication
+
+Requires a valid **captain** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Query Parameters
+
+| Parameter  | Type     | Required | Description                                                    |
+|------------|----------|----------|----------------------------------------------------------------|
+| `rideId`   | `string` | ✅ Yes   | The valid MongoID of the ride to be started                    |
+| `otp`      | `string` | ✅ Yes   | The valid OTP provided by the user to the captain              |
+
+#### Example Request
+
+```
+POST /rides/start?rideId=660f7b8c9d0e1f2a3b4c5d6e&otp=123456
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Ride Started Successfully
+
+Returns the updated ride object (with populated user and captain).
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when `rideId` or `otp` query parameters are missing or invalid.
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the ride is not found, the ride is not in the `accepted` state, the OTP is invalid, or an unexpected error occurs.
+
+---
+
+### POST `/rides/end`
+
+#### Description
+
+Allows a captain to end an ongoing ride. Updates the ride status to `completed` and emits a `ride-ended` socket event to the user.
+
+---
+
+#### HTTP Method
+
+`POST`
+
+#### URL
+
+```
+/rides/end
+```
+
+---
+
+#### Authentication
+
+Requires a valid **captain** JWT token.
+
+| Method                    | Format                  |
+|---------------------------|-------------------------|
+| **Cookie**                | `token=<jwt_token>`     |
+| **Authorization Header**  | `Bearer <jwt_token>`    |
+
+---
+
+#### Request Body
+
+The request body must be sent as **JSON** (`Content-Type: application/json`).
+
+| Field      | Type     | Required | Description                                                    |
+|------------|----------|----------|----------------------------------------------------------------|
+| `rideId`   | `string` | ✅ Yes   | The valid MongoID of the ongoing ride to be ended              |
+
+#### Example Request
+
+```json
+{
+  "rideId": "660f7b8c9d0e1f2a3b4c5d6e"
+}
+```
+
+---
+
+#### Responses
+
+##### ✅ `200 OK` — Ride Ended Successfully
+
+Returns the updated ride object (with populated user and captain).
+
+##### ❌ `400 Bad Request` — Validation Errors
+
+Returned when `rideId` is missing or is not a valid MongoID.
+
+##### ❌ `500 Internal Server Error`
+
+Returned when the ride is not found, the ride is not in the `ongoing` state, or an unexpected error occurs.
+
+---
