@@ -11,6 +11,7 @@ import WaitingForDriver from '../components/WaitingForDriver';
 import { SocketContext } from '../context/SocketContext';
 import { useContext, useEffect } from 'react';
 import { UserDataContext } from '../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
     const [pickup, setPickup] = useState('')
@@ -20,26 +21,26 @@ const Home = () => {
     const confirmRidePanelRef = useRef(null)
     const vehicleFoundRef = useRef(null)
     const waitingForDriverRef = useRef(null)
-
-
     const panelRef = useRef(null)
     const panelCloseRef = useRef(null)
     const [vehiclePanel, setVehiclePanel] = useState(false)
     const [confirmRidePanel, setConfirmRidePanel] = useState(false)
-
     const [vehicleFound, setVehicleFound] = useState(false)
     const [waitingForDriver, setWaitingForDriver] = useState(false)
-
     const [pickupSuggestions, setPickupSuggestions] = useState([])
     const [destinationSuggestions, setDestinationSuggestions] = useState([])
     const [activeField, setActiveField] = useState(null)
     const [fare, setFare] = useState({})
     const [vehicleType, setVehicleType] = useState(null)
+    const [ride, setRide] = useState(null)
+
+    const navigate = useNavigate()
 
     const { socket } = useContext(SocketContext)
     const { user } = useContext(UserDataContext)
 
     useEffect(() => {
+   
         if (user && user._id) {
             socket.emit("join", { userType: "user", userId: user._id })
         }
@@ -114,21 +115,6 @@ const Home = () => {
         setFare(response.data)
     }
 
-    async function createRide() {
-        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/rides/create`, {
-            pickup,
-            destination,
-            vehicleType
-        }, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-        })
-
-        console.log(response.data)
-
-    }
-
     useGSAP(function () {
 
         if (panelOpen) {
@@ -201,6 +187,32 @@ const Home = () => {
         }
     }, [waitingForDriver])
 
+    async function findTrip() {
+        setVehiclePanel(true)
+        setPanelOpen(false)
+
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/rides/get-fare`, {
+            params: { pickup, destination },
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        setFare(response.data)
+    }
+
+    async function createRide() {
+        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/rides/create`, {
+            pickup,
+            destination,
+            vehicleType
+        }, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        console.log(response.data)
+    }
+
     return (
         <div className='h-screen relative overflow-hidden'>
             <img className='w-16 absolute left-5 top-5' src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png" alt="" />
@@ -242,9 +254,10 @@ const Home = () => {
                             type="text"
                             placeholder='Enter your destination' />
                         <button
+                            onClick={findTrip}
                             className='bg-black text-white px-4 py-2 rounded-lg mt-3 w-full'>
                             Find Trip
-                        </button>
+                        </button>   
                     </form>
 
                 </div>
@@ -281,8 +294,12 @@ const Home = () => {
                     vehicleType={vehicleType}
                     setVehicleFound={setVehicleFound} />
             </div>
-            <div ref={waitingForDriverRef} className='fixed w-full z-10 bottom-0  bg-white px-3 py-6 pt-12'>
-                <WaitingForDriver waitingForDriver={waitingForDriver} />
+            <div ref={waitingForDriverRef} className='fixed w-full  z-10 bottom-0  bg-white px-3 py-6 pt-12'>
+                <WaitingForDriver
+                    ride={ride}
+                    setVehicleFound={setVehicleFound}
+                    setWaitingForDriver={setWaitingForDriver}
+                    waitingForDriver={waitingForDriver} />
             </div>
         </div>
     )

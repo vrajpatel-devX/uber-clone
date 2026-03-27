@@ -8,7 +8,7 @@ const LocationSearchPanel = ({ suggestions, setVehiclePanel, setPanelOpen, setPi
         } else if (activeField === 'destination') {
             setDestination(suggestion)
         }
-        setPanelOpen(false)
+        // setPanelOpen(false)
     }
 
 
@@ -27,4 +27,4 @@ const LocationSearchPanel = ({ suggestions, setVehiclePanel, setPanelOpen, setPi
     )
 }
 
-export default LocationSearchPanel
+export default LocationSearchPanel
