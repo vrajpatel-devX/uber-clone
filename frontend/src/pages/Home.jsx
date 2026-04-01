@@ -48,7 +48,7 @@ const Home = () => {
     }, [user])
 
     socket.on('ride-confirmed', ride => {
-
+        console.log("ride confirmed")
         setVehicleFound(false)
         setWaitingForDriver(true)
         setRide(ride)
@@ -68,7 +68,7 @@ const Home = () => {
             return
         }
         try {
-            const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`, {
+            const response = await axios.get(`${import.meta.env.VITE_MAP_BASE_URL}/maps/get-suggestions`, {
                 params: { input: e.target.value },
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -88,7 +88,7 @@ const Home = () => {
             return
         }
         try {
-            const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`, {
+            const response = await axios.get(`${import.meta.env.VITE_MAP_BASE_URL}/maps/get-suggestions`, {
                 params: { input: e.target.value },
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -106,7 +106,7 @@ const Home = () => {
         setVehiclePanel(true)
         setPanelOpen(false)
 
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/rides/get-fare`, {
+        const response = await axios.get(`${import.meta.env.VITE_RIDE_BASE_URL}/rides/get-fare`, {
             params: { pickup, destination },
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -191,7 +191,7 @@ const Home = () => {
         setVehiclePanel(true)
         setPanelOpen(false)
 
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/rides/get-fare`, {
+        const response = await axios.get(`${import.meta.env.VITE_RIDE_BASE_URL}/rides/get-fare`, {
             params: { pickup, destination },
             headers: {
                 Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -201,7 +201,7 @@ const Home = () => {
     }
 
     async function createRide() {
-        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/rides/create`, {
+        const response = await axios.post(`${import.meta.env.VITE_RIDE_BASE_URL}/rides/create`, {
             pickup,
             destination,
             vehicleType

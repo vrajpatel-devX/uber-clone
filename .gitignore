@@ -1,3 +1,11 @@
 .env
+**/.env
+
 node_modules
+**/node_modules
+
+# Backend — har subfolder (captain, ride, user, map, wagera) mein .env aur node_modules
+Backend/**/.env
+Backend/**/node_modules/
+
 Learning/

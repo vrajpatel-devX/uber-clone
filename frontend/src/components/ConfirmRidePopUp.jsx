@@ -13,7 +13,7 @@ const ConfirmRidePopUp = (props) => {
         console.log(props.ride._id)
         console.log(otp)
         
-        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/rides/start-ride`, {
+        const response = await axios.get(`${import.meta.env.VITE_RIDE_BASE_URL}/rides/start-ride`, {
             params: {
                 rideId: props.ride._id,
                 otp: otp
@@ -28,7 +28,6 @@ const ConfirmRidePopUp = (props) => {
             props.setRidePopupPanel(false)
             navigate('/captain-riding', { state: { ride: props.ride } })
         }
-
 
     }
     return (
