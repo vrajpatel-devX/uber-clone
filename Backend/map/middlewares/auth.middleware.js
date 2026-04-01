@@ -8,7 +8,7 @@ module.exports.authUser = async (req, res, next) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const response = await axios.get('http://localhost:3000/users/profile', {
+        const response = await axios.get(`${process.env.USER_SERVICE_URL}/users/profile`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -37,7 +37,7 @@ module.exports.authCaptain = async (req, res, next) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const response = await axios.get('http://localhost:3001/captains/profile', {
+        const response = await axios.get(`${process.env.CAPTAIN_SERVICE_URL}/captains/profile`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

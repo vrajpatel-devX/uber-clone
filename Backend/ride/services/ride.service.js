@@ -17,7 +17,6 @@ async function getFare(pickup, destination, token) {
 
     const distanceTime = response.data;
 
-
     const baseFare = {
         auto: 30,
         car: 50,
@@ -36,8 +35,6 @@ async function getFare(pickup, destination, token) {
         moto: 1.5
     };
 
-
-
     const fare = {
         auto: Math.round(baseFare.auto + ((distanceTime.distance.value / 1000) * perKmRate.auto) + ((distanceTime.duration.value / 60) * perMinuteRate.auto)),
         car: Math.round(baseFare.car + ((distanceTime.distance.value / 1000) * perKmRate.car) + ((distanceTime.duration.value / 60) * perMinuteRate.car)),
@@ -45,12 +42,9 @@ async function getFare(pickup, destination, token) {
     };
 
     return fare;
-
-
 }
 
 module.exports.getFare = getFare;
-
 
 function getOtp(num) {
     function generateOtp(num) {
@@ -87,7 +81,7 @@ module.exports.confirmRide = async ({
     if (!rideId) {
         throw new Error('Ride id is required');
     }
-console.log("okay10")
+
     await rideModel.findOneAndUpdate({
         _id: rideId
     }, {
@@ -95,22 +89,15 @@ console.log("okay10")
         captain: captain._id
     })
 
-    console.log("okay11")
-
     const ride = await rideModel.findOne({
         _id: rideId
     }).select('+otp');
-
-    console.log("okay12")
 
     if (!ride) {
         throw new Error('Ride not found');
     }
 
-    console.log("okay13")
-
     return ride;
-
 }
 
 module.exports.startRide = async ({ rideId, otp, captain }) => {

@@ -98,7 +98,6 @@ module.exports.confirmRide = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-    console.log("okay1")
     const { rideId } = req.body;
 
     try {
@@ -115,8 +114,6 @@ module.exports.confirmRide = async (req, res) => {
             data: rideWithUser
         })
 
-        console.log("okay8")
-
         return res.status(200).json(rideWithUser);
     } catch (err) {
 
@@ -130,8 +127,6 @@ module.exports.startRide = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-
-    console.log("okay1")
 
     const { rideId, otp } = req.query;
 
