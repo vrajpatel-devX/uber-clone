@@ -16,11 +16,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.get('/', (req, res) => {
+app.get('/health-check', (req, res) => {
     res.send('Captain Service is running');
 });
 
-app.use('/captains', captainRoutes);
+app.use('/', captainRoutes);
 
 app.listen(port, () => {
     console.log(`Captain Service listening at http://localhost:${port}`);

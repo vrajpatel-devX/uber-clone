@@ -19,12 +19,12 @@ function initializeSocket(server) {
             const { userId, userType } = data;
 
             if (userType === 'user') {
-                await axios.post(`${process.env.USER_SERVICE_URL}/users/update-socket-id`, {
+                await axios.post(`${process.env.USER_SERVICE_URL}/update-socket-id`, {
                     userId,
                     socketId: socket.id
                 })
             } else if (userType === 'captain') {
-                await axios.post(`${process.env.CAPTAIN_SERVICE_URL}/captains/update-socket-id-location`, {
+                await axios.post(`${process.env.CAPTAIN_SERVICE_URL}/update-socket-id-location`, {
                     userId,
                     socketId: socket.id
                 })
@@ -39,7 +39,7 @@ function initializeSocket(server) {
                 return socket.emit('error', { message: 'Invalid location data' });
             }
 
-            await axios.post(`${process.env.CAPTAIN_SERVICE_URL}/captains/update-socket-id-location`, {
+            await axios.post(`${process.env.CAPTAIN_SERVICE_URL}/update-socket-id-location`, {
                 userId,
                 location: {
                     ltd: location.ltd,

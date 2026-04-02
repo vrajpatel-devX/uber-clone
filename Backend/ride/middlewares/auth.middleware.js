@@ -8,13 +8,11 @@ module.exports.authUser = async (req, res, next) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         
-        const response = await axios.get(`${process.env.USER_SERVICE_URL}/users/profile`, {
+        const response = await axios.get(`${process.env.USER_SERVICE_URL}/profile`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-
-        console.log(response.data);
 
         const user = response.data;
 
@@ -23,7 +21,7 @@ module.exports.authUser = async (req, res, next) => {
         }
 
         req.user = user;
-
+        console.log("pass middleware")
         return next();
 
     } catch (err) {
@@ -39,7 +37,7 @@ module.exports.authCaptain = async (req, res, next) => {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const response = await axios.get(`${process.env.CAPTAIN_SERVICE_URL}/captains/profile`, {
+        const response = await axios.get(`${process.env.CAPTAIN_SERVICE_URL}/profile`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

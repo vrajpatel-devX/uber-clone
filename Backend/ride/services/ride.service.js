@@ -8,13 +8,13 @@ async function getFare(pickup, destination, token) {
     if (!pickup || !destination) {
         throw new Error('Pickup and destination are required');
     }
-
-    const response = await axios.get(`${process.env.MAP_SERVICE_URL}/maps/get-distance-time?origin=${pickup}&destination=${destination}`, {
+  
+    const response = await axios.get(`${process.env.MAP_SERVICE_URL}/get-distance-time?origin=${pickup}&destination=${destination}`, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
-
+  
     const distanceTime = response.data;
 
     const baseFare = {
@@ -61,9 +61,9 @@ module.exports.createRide = async ({
     if (!user || !pickup || !destination || !vehicleType) {
         throw new Error('All fields are required');
     }
-
+   
     const fare = await getFare(pickup, destination, token);
-
+  
     const ride = rideModel.create({
         user,
         pickup,
@@ -104,7 +104,7 @@ module.exports.startRide = async ({ rideId, otp, captain }) => {
     if (!rideId || !otp) {
         throw new Error('Ride id and OTP are required');
     } 
-
+    
     const ride = await rideModel.findOne({
         _id: rideId
     }).select('+otp');

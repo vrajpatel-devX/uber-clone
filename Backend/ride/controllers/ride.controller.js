@@ -7,9 +7,9 @@ const rideModel = require('../models/ride.model');
 async function getRideWithUserAndCaptain(ride) {
     let rideWithDetails = ride.toObject ? ride.toObject() : ride;
     try {
-        const userPromise = axios.get(`${process.env.USER_SERVICE_URL}/users/get-user-by-id/${ride.user}`);
+        const userPromise = axios.get(`${process.env.USER_SERVICE_URL}/get-user-by-id/${ride.user}`);
         const captainPromise = ride.captain 
-            ? axios.get(`${process.env.CAPTAIN_SERVICE_URL}/captains/get-captain-by-id/${ride.captain}`)
+            ? axios.get(`${process.env.CAPTAIN_SERVICE_URL}/get-captain-by-id/${ride.captain}`)
             : Promise.resolve({ data: null });
 
         const [userResponse, captainResponse] = await Promise.all([userPromise, captainPromise]);
@@ -36,7 +36,7 @@ module.exports.createRide = async (req, res) => {
     try {
         const ride = await rideService.createRide({ user: req.user._id, pickup, destination, vehicleType, token: req.cookies.token || req.headers.authorization?.split(' ')[1] });
 
-        const pickupCoordinatesResponse = await axios.get(`${process.env.MAP_SERVICE_URL}/maps/get-coordinates?address=${pickup}`, {
+        const pickupCoordinatesResponse = await axios.get(`${process.env.MAP_SERVICE_URL}/get-coordinates?address=${pickup}`, {
             headers: {
                 Authorization: `Bearer ${req.cookies.token || req.headers.authorization?.split(' ')[1]}`
             }
@@ -44,14 +44,13 @@ module.exports.createRide = async (req, res) => {
 
         const pickupCoordinates = pickupCoordinatesResponse.data;
 
-        const captainsInRadiusResponse = await axios.get(`${process.env.MAP_SERVICE_URL}/maps/get-captains-in-radius?ltd=${pickupCoordinates.ltd}&lng=${pickupCoordinates.lng}&radius=2`, {
+        const captainsInRadiusResponse = await axios.get(`${process.env.MAP_SERVICE_URL}/get-captains-in-radius?ltd=${pickupCoordinates.ltd}&lng=${pickupCoordinates.lng}&radius=2`, {
             headers: {
                 Authorization: `Bearer ${req.cookies.token || req.headers.authorization?.split(' ')[1]}`
             }
         });
-
+  
         const captainsInRadius = captainsInRadiusResponse.data;
-
 
         ride.otp = ""
 

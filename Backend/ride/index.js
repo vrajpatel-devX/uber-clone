@@ -21,11 +21,11 @@ app.use(cookieParser());
 const server = http.createServer(app);
 initializeSocket(server);
 
-app.get('/', (req, res) => {
+app.get('/health-check', (req, res) => {
     res.send('Ride Service is running');
 });
 
-app.use('/rides', rideRoutes);
+app.use('/', rideRoutes);
 
 server.listen(port, () => {
     console.log(`Ride Service listening at http://localhost:${port}`);
